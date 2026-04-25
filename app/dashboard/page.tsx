@@ -30,6 +30,30 @@ export default async function DashboardPage() {
     .from('clients')
     .select('*', { count: 'exact', head: true })
 
+  // Cortes de hoy
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+
+  const { count: todayCutsCount } = await supabase
+    .from('cuts')
+    .select('*', { count: 'exact', head: true })
+    .gte('date', today.toISOString())
+    .lt('date', tomorrow.toISOString())
+
+  // Ingresos del mes
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59)
+
+  const { data: monthCuts } = await supabase
+    .from('cuts')
+    .select('price')
+    .gte('date', firstDayOfMonth.toISOString())
+    .lte('date', lastDayOfMonth.toISOString())
+
+  const monthIncome = monthCuts?.reduce((sum, cut) => sum + Number(cut.price), 0) || 0
+
   return (
     <div className="min-h-svh bg-muted/30 p-6 md:p-10">
       <div className="mx-auto max-w-6xl">
@@ -64,7 +88,10 @@ export default async function DashboardPage() {
               <Scissors className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">0</p>
+              <p className="text-3xl font-bold">{todayCutsCount || 0}</p>
+              <Link href="/dashboard/cuts" className="text-sm text-primary hover:underline">
+                Ver cortes
+              </Link>
             </CardContent>
           </Card>
 
@@ -76,7 +103,12 @@ export default async function DashboardPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">$0</p>
+              <p className="text-3xl font-bold">
+                {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(monthIncome)}
+              </p>
+              <Link href="/dashboard/cuts/new" className="text-sm text-primary hover:underline">
+                Registrar corte
+              </Link>
             </CardContent>
           </Card>
 
@@ -115,7 +147,11 @@ export default async function DashboardPage() {
                   Agrega y administra clientes
                 </Link>
               </li>
-              <li>Registra cortes y rastrea ingresos</li>
+              <li>
+                <Link href="/dashboard/cuts" className="text-primary underline underline-offset-4 hover:text-primary/80">
+                  Registra cortes y rastrea ingresos
+                </Link>
+              </li>
               <li>Consulta reportes y estadisticas</li>
             </ul>
           </CardContent>
