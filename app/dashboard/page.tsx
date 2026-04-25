@@ -67,6 +67,10 @@ export default async function DashboardPage() {
   ])
 
   const monthIncome = monthCuts?.reduce((sum, c) => sum + Number(c.price), 0) ?? 0
+  const todayIncome =
+    recentCuts
+      ?.filter(c => c.date >= today.toISOString() && c.date < tomorrow.toISOString())
+      .reduce((sum, c) => sum + Number(c.price), 0) ?? 0
 
   // Build 30-day chart data with zero-fill
   const chartData = Array.from({ length: 30 }, (_, i) => {
@@ -168,9 +172,30 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Ingresos del mes
+                Ingresos del día
               </CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">
+                {new Intl.NumberFormat('es-CO', {
+                  style: 'currency',
+                  currency: 'COP',
+                  maximumFractionDigits: 0,
+                }).format(todayIncome)}
+              </p>
+              <Link href="/dashboard/income" className="text-sm text-primary hover:underline">
+                Ver ingresos
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Ingresos del mes
+              </CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">
@@ -197,21 +222,6 @@ export default async function DashboardPage() {
               <p className="text-3xl font-bold">{clientCount ?? 0}</p>
               <Link href="/dashboard/clients" className="text-sm text-primary hover:underline">
                 Ver clientes
-              </Link>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Reportes
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-lg font-medium text-muted-foreground">Analiza tu negocio</p>
-              <Link href="/dashboard/income" className="text-sm text-primary hover:underline">
-                Ver reportes
               </Link>
             </CardContent>
           </Card>
