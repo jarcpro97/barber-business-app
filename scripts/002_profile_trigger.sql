@@ -1,4 +1,6 @@
--- Auto-create profile when a user signs up
+-- CutMetrics: Trigger para crear perfil automaticamente al registrarse
+-- Ejecutado en Fase 4
+
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -6,10 +8,11 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, name)
+  insert into public.profiles (id, name, shop_name)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data ->> 'name', null)
+    coalesce(new.raw_user_meta_data ->> 'name', null),
+    coalesce(new.raw_user_meta_data ->> 'shop_name', null)
   )
   on conflict (id) do nothing;
 
@@ -17,10 +20,8 @@ begin
 end;
 $$;
 
--- Drop existing trigger if exists
 drop trigger if exists on_auth_user_created on auth.users;
 
--- Create trigger
 create trigger on_auth_user_created
   after insert on auth.users
   for each row

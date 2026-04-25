@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
-import { User, Scissors, DollarSign, Users } from 'lucide-react'
+import { User, Scissors, DollarSign, Users, Plus, TrendingUp } from 'lucide-react'
 
 async function signOut() {
   'use server'
@@ -57,7 +57,7 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-svh bg-muted/30 p-6 md:p-10">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-8 flex items-center justify-between">
+        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Panel</h1>
             <p className="text-muted-foreground">
@@ -79,7 +79,35 @@ export default async function DashboardPage() {
           </div>
         </header>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        {/* Acciones rapidas */}
+        <div className="mb-8 grid gap-4 sm:grid-cols-2">
+          <Button size="lg" className="h-auto py-6" asChild>
+            <Link href="/dashboard/cuts/new" className="flex flex-col items-center gap-2">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-foreground/20">
+                <Scissors className="h-6 w-6" />
+              </div>
+              <div className="text-center">
+                <span className="text-lg font-semibold">Registrar Corte</span>
+                <p className="text-sm text-primary-foreground/80">Agrega un nuevo corte</p>
+              </div>
+            </Link>
+          </Button>
+
+          <Button size="lg" variant="secondary" className="h-auto py-6" asChild>
+            <Link href="/dashboard/clients/new" className="flex flex-col items-center gap-2">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary-foreground/10">
+                <Plus className="h-6 w-6" />
+              </div>
+              <div className="text-center">
+                <span className="text-lg font-semibold">Agregar Cliente</span>
+                <p className="text-sm text-muted-foreground">Registra un nuevo cliente</p>
+              </div>
+            </Link>
+          </Button>
+        </div>
+
+        {/* Metricas */}
+        <div className="grid gap-6 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -90,7 +118,7 @@ export default async function DashboardPage() {
             <CardContent>
               <p className="text-3xl font-bold">{todayCutsCount || 0}</p>
               <Link href="/dashboard/cuts" className="text-sm text-primary hover:underline">
-                Ver cortes
+                Ver todos los cortes
               </Link>
             </CardContent>
           </Card>
@@ -106,8 +134,8 @@ export default async function DashboardPage() {
               <p className="text-3xl font-bold">
                 {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(monthIncome)}
               </p>
-              <Link href="/dashboard/cuts/new" className="text-sm text-primary hover:underline">
-                Registrar corte
+              <Link href="/dashboard/income" className="text-sm text-primary hover:underline">
+                Ver ingresos
               </Link>
             </CardContent>
           </Card>
@@ -126,34 +154,55 @@ export default async function DashboardPage() {
               </Link>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Reportes
+              </CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-lg font-medium text-muted-foreground">Analiza tu negocio</p>
+              <Link href="/dashboard/income" className="text-sm text-primary hover:underline">
+                Ver reportes
+              </Link>
+            </CardContent>
+          </Card>
         </div>
 
+        {/* Navegacion rapida */}
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>Empezando</CardTitle>
+            <CardTitle>Navegacion rapida</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">
-              Tu panel esta listo. Proximos pasos:
-            </p>
-            <ul className="mt-4 list-inside list-disc text-muted-foreground">
-              <li>
-                <Link href="/dashboard/profile" className="text-primary underline underline-offset-4 hover:text-primary/80">
-                  Configura tu perfil de barbero
+            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+              <Button variant="outline" className="justify-start" asChild>
+                <Link href="/dashboard/cuts">
+                  <Scissors className="mr-2 h-4 w-4" />
+                  Historial de cortes
                 </Link>
-              </li>
-              <li>
-                <Link href="/dashboard/clients" className="text-primary underline underline-offset-4 hover:text-primary/80">
-                  Agrega y administra clientes
+              </Button>
+              <Button variant="outline" className="justify-start" asChild>
+                <Link href="/dashboard/clients">
+                  <Users className="mr-2 h-4 w-4" />
+                  Lista de clientes
                 </Link>
-              </li>
-              <li>
-                <Link href="/dashboard/cuts" className="text-primary underline underline-offset-4 hover:text-primary/80">
-                  Registra cortes y rastrea ingresos
+              </Button>
+              <Button variant="outline" className="justify-start" asChild>
+                <Link href="/dashboard/income">
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Ingresos
                 </Link>
-              </li>
-              <li>Consulta reportes y estadisticas</li>
-            </ul>
+              </Button>
+              <Button variant="outline" className="justify-start" asChild>
+                <Link href="/dashboard/profile">
+                  <User className="mr-2 h-4 w-4" />
+                  Mi perfil
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
