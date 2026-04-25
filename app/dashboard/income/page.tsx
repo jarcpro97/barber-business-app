@@ -121,8 +121,8 @@ export default function IncomePage() {
     setLoading(false)
   }
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value)
+  const formatCurrency = (value: number): string =>
+    '$ ' + Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 
   const monthNames = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -268,7 +268,7 @@ export default function IncomePage() {
                       .map((item, i) => (
                         <tr key={i} className="border-b last:border-0">
                           <td className="py-3">
-                            {new Date(item.date).toLocaleDateString("es-MX", {
+                            {new Date(item.date).toLocaleDateString("es-CO", {
                               weekday: "long",
                               day: "numeric",
                               month: "long"
@@ -283,7 +283,7 @@ export default function IncomePage() {
                       .map((item, i) => (
                         <tr key={i} className="border-b last:border-0">
                           <td className="py-3">
-                            Semana del {new Date(item.week).toLocaleDateString("es-MX", {
+                            Semana del {new Date(item.week).toLocaleDateString("es-CO", {
                               day: "numeric",
                               month: "long"
                             })}

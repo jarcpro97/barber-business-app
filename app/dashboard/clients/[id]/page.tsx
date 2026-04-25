@@ -149,7 +149,7 @@ export default function ClientDetailPage() {
               <h1 className="text-2xl font-bold text-foreground">{client.name}</h1>
               <p className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-3 w-3" />
-                Cliente desde {new Date(client.created_at).toLocaleDateString("es-MX", {
+                Cliente desde {new Date(client.created_at).toLocaleDateString("es-CO", {
                   year: "numeric",
                   month: "long",
                   day: "numeric",

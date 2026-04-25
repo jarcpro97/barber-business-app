@@ -65,12 +65,8 @@ export default function CutsPage() {
     })
   }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN'
-    }).format(price)
-  }
+  const formatPrice = (price: number): string =>
+    '$ ' + Math.round(price).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 
   if (loading) {
     return (

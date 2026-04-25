@@ -2,8 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { RevenueChart } from '@/components/dashboard/revenue-chart'
 import Link from 'next/link'
-import { User, Scissors, DollarSign, Users, Plus, TrendingUp } from 'lucide-react'
+import { User, Scissors, DollarSign, Users, Plus, TrendingUp, Trophy } from 'lucide-react'
 
 async function signOut() {
   'use server'
@@ -20,39 +21,80 @@ export default async function DashboardPage() {
     redirect('/auth/login')
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  const { count: clientCount } = await supabase
-    .from('clients')
-    .select('*', { count: 'exact', head: true })
-
-  // Cortes de hoy
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
 
-  const { count: todayCutsCount } = await supabase
-    .from('cuts')
-    .select('*', { count: 'exact', head: true })
-    .gte('date', today.toISOString())
-    .lt('date', tomorrow.toISOString())
-
-  // Ingresos del mes
   const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
   const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59)
 
-  const { data: monthCuts } = await supabase
-    .from('cuts')
-    .select('price')
-    .gte('date', firstDayOfMonth.toISOString())
-    .lte('date', lastDayOfMonth.toISOString())
+  const thirtyDaysAgo = new Date(today)
+  thirtyDaysAgo.setDate(today.getDate() - 29)
 
-  const monthIncome = monthCuts?.reduce((sum, cut) => sum + Number(cut.price), 0) || 0
+  const ninetyDaysAgo = new Date(today)
+  ninetyDaysAgo.setDate(today.getDate() - 89)
+
+  const [
+    { data: profile },
+    { count: clientCount },
+    { count: todayCutsCount },
+    { data: monthCuts },
+    { data: recentCuts },
+    { data: topClientCuts },
+  ] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase.from('clients').select('*', { count: 'exact', head: true }),
+    supabase
+      .from('cuts')
+      .select('*', { count: 'exact', head: true })
+      .gte('date', today.toISOString())
+      .lt('date', tomorrow.toISOString()),
+    supabase
+      .from('cuts')
+      .select('price')
+      .gte('date', firstDayOfMonth.toISOString())
+      .lte('date', lastDayOfMonth.toISOString()),
+    supabase
+      .from('cuts')
+      .select('date, price')
+      .gte('date', thirtyDaysAgo.toISOString())
+      .order('date', { ascending: true }),
+    supabase
+      .from('cuts')
+      .select('date, client:clients(id, name)')
+      .gte('date', ninetyDaysAgo.toISOString()),
+  ])
+
+  const monthIncome = monthCuts?.reduce((sum, c) => sum + Number(c.price), 0) ?? 0
+
+  // Build 30-day chart data with zero-fill
+  const chartData = Array.from({ length: 30 }, (_, i) => {
+    const d = new Date(thirtyDaysAgo)
+    d.setDate(d.getDate() + i)
+    const key = d.toISOString().split('T')[0]
+    const label = d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })
+    const total =
+      recentCuts
+        ?.filter((c) => c.date.startsWith(key))
+        .reduce((sum, c) => sum + Number(c.price), 0) ?? 0
+    return { day: label, total }
+  })
+
+  // Top 3 clients by cut count (last 90 days)
+  type ClientEntry = { name: string; count: number }
+  const topClients = Object.values(
+    (topClientCuts ?? []).reduce<Record<string, ClientEntry>>((acc, cut) => {
+      const client = Array.isArray(cut.client) ? cut.client[0] : cut.client
+      if (!client) return acc
+      const id = client.id
+      if (!acc[id]) acc[id] = { name: client.name, count: 0 }
+      acc[id].count++
+      return acc
+    }, {}),
+  )
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3)
 
   return (
     <div className="min-h-svh bg-muted/30 p-6 md:p-10">
@@ -73,13 +115,13 @@ export default async function DashboardPage() {
             </Button>
             <form action={signOut}>
               <Button variant="ghost" type="submit">
-                Cerrar sesion
+                Cerrar sesión
               </Button>
             </form>
           </div>
         </header>
 
-        {/* Acciones rapidas */}
+        {/* Acciones rápidas */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2">
           <Button size="lg" className="h-auto py-6" asChild>
             <Link href="/dashboard/cuts/new" className="flex flex-col items-center gap-2">
@@ -106,8 +148,8 @@ export default async function DashboardPage() {
           </Button>
         </div>
 
-        {/* Metricas */}
-        <div className="grid gap-6 md:grid-cols-4">
+        {/* Métricas */}
+        <div className="mb-6 grid gap-6 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -116,7 +158,7 @@ export default async function DashboardPage() {
               <Scissors className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{todayCutsCount || 0}</p>
+              <p className="text-3xl font-bold">{todayCutsCount ?? 0}</p>
               <Link href="/dashboard/cuts" className="text-sm text-primary hover:underline">
                 Ver todos los cortes
               </Link>
@@ -132,7 +174,11 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">
-                {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(monthIncome)}
+                {new Intl.NumberFormat('es-CO', {
+                  style: 'currency',
+                  currency: 'COP',
+                  maximumFractionDigits: 0,
+                }).format(monthIncome)}
               </p>
               <Link href="/dashboard/income" className="text-sm text-primary hover:underline">
                 Ver ingresos
@@ -148,7 +194,7 @@ export default async function DashboardPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{clientCount || 0}</p>
+              <p className="text-3xl font-bold">{clientCount ?? 0}</p>
               <Link href="/dashboard/clients" className="text-sm text-primary hover:underline">
                 Ver clientes
               </Link>
@@ -171,10 +217,57 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
-        {/* Navegacion rapida */}
-        <Card className="mt-6">
+        {/* Gráfica de ingresos + Top clientes */}
+        <div className="mb-6 grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Ingresos diarios (últimos 30 días)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RevenueChart data={chartData} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center gap-2">
+              <Trophy className="h-5 w-5 text-yellow-500" />
+              <CardTitle>Top clientes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {topClients.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Aún no hay cortes registrados en los últimos 90 días.
+                </p>
+              ) : (
+                <ol className="space-y-3">
+                  {topClients.map((client, i) => (
+                    <li key={client.name} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-sm font-bold">
+                          {i + 1}
+                        </span>
+                        <span className="font-medium">{client.name}</span>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {client.count} {client.count === 1 ? 'corte' : 'cortes'}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+              <div className="mt-4">
+                <Link href="/dashboard/clients" className="text-sm text-primary hover:underline">
+                  Ver todos los clientes
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Navegación rápida */}
+        <Card>
           <CardHeader>
-            <CardTitle>Navegacion rapida</CardTitle>
+            <CardTitle>Navegación rápida</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
