@@ -1,16 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
-import { ArrowLeft, Scissors } from 'lucide-react'
+import { ArrowLeft, Scissors, Plus } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 
 type Client = {
@@ -24,9 +23,11 @@ function formatCOP(raw: string): string {
   return parseInt(digits, 10).toLocaleString('es-CO')
 }
 
-export default function NewCutPage() {
+function NewCutForm() {
   const [clients, setClients] = useState<Client[]>([])
-  const [clientId, setClientId] = useState<string>('')
+  const [search, setSearch] = useState('')
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [open, setOpen] = useState(false)
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [price, setPrice] = useState('')
@@ -35,10 +36,11 @@ export default function NewCutPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+  const pickerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    // Set default date and time to now
     const now = new Date()
     setDate(now.toISOString().split('T')[0])
     setTime(now.toTimeString().slice(0, 5))
@@ -49,11 +51,36 @@ export default function NewCutPage() {
         .select('id, name')
         .order('name')
 
-      setClients(data || [])
+      const list = data || []
+      setClients(list)
+
+      const preselect = searchParams.get('clientId')
+      if (preselect) {
+        const found = list.find(c => c.id === preselect)
+        if (found) {
+          setSelectedClient(found)
+          setSearch(found.name)
+        }
+      }
     }
 
     fetchClients()
-  }, [supabase])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    function handleMouseDown(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleMouseDown)
+    return () => document.removeEventListener('mousedown', handleMouseDown)
+  }, [])
+
+  const filtered = clients.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  )
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -68,7 +95,7 @@ export default function NewCutPage() {
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      setError('Debes iniciar sesion')
+      setError('Debes iniciar sesión')
       setLoading(false)
       return
     }
@@ -79,11 +106,11 @@ export default function NewCutPage() {
       .from('cuts')
       .insert({
         barber_id: user.id,
-        client_id: clientId || null,
+        client_id: selectedClient?.id || null,
         date: dateTime.toISOString(),
         price: parseInt(price.replace(/\./g, ''), 10),
         duration: duration ? parseInt(duration) : null,
-        notes: notes || null
+        notes: notes || null,
       })
 
     if (insertError) {
@@ -124,25 +151,48 @@ export default function NewCutPage() {
               <FieldGroup>
                 <Field>
                   <FieldLabel>Cliente (opcional)</FieldLabel>
-                  <Select value={clientId} onValueChange={setClientId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {clients.length === 0 && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      <Link href="/dashboard/clients/new" className="text-primary underline">
-                        Agregar cliente
-                      </Link>
-                    </p>
-                  )}
+                  <div className="relative" ref={pickerRef}>
+                    <Input
+                      placeholder="Buscar cliente..."
+                      value={search}
+                      onChange={(e) => {
+                        setSearch(e.target.value)
+                        setSelectedClient(null)
+                        setOpen(true)
+                      }}
+                      onFocus={() => setOpen(true)}
+                      autoComplete="off"
+                    />
+                    {open && (
+                      <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover shadow-md">
+                        {filtered.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            className="flex w-full items-center px-3 py-2 text-sm hover:bg-accent"
+                            onClick={() => {
+                              setSelectedClient(c)
+                              setSearch(c.name)
+                              setOpen(false)
+                            }}
+                          >
+                            {c.name}
+                          </button>
+                        ))}
+                        {filtered.length > 0 && <div className="border-t" />}
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-primary"
+                          onClick={() =>
+                            router.push('/dashboard/clients/new?returnTo=/dashboard/cuts/new')
+                          }
+                        >
+                          <Plus className="h-4 w-4" />
+                          {search ? `Agregar "${search}"` : 'Agregar cliente'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </Field>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -171,7 +221,7 @@ export default function NewCutPage() {
                     <FieldLabel>Precio (COP)</FieldLabel>
                     <Input
                       type="text"
-                      inputMode="numeric"
+                      inputMode="decimal"
                       placeholder="10.000"
                       value={price}
                       onChange={(e) => setPrice(formatCOP(e.target.value))}
@@ -179,7 +229,7 @@ export default function NewCutPage() {
                     />
                   </Field>
                   <Field>
-                    <FieldLabel>Duracion (min)</FieldLabel>
+                    <FieldLabel>Duración (min)</FieldLabel>
                     <Input
                       type="number"
                       min="0"
@@ -214,5 +264,13 @@ export default function NewCutPage() {
         </Card>
       </div>
     </main>
+  )
+}
+
+export default function NewCutPage() {
+  return (
+    <Suspense>
+      <NewCutForm />
+    </Suspense>
   )
 }

@@ -32,11 +32,93 @@ create policy "Barbers manage own cuts"
 
 ## 3. Build `/dashboard/cuts/new`
 
-- Fields: date/time picker (defaults to now), price (required), duration (minutes, optional), client selector (dropdown of the barber's clients), notes.
-- Price input uses `type="text"` + `inputMode="numeric"` y un helper `formatCOP(raw)` que strip non-digits y aplica `toLocaleString('es-CO')` para auto-insertar `.` al escribir (ej. `10000` → `10.000`). Placeholder: `10.000`.
+### Campos
+
+- Fecha / hora (defaults a ahora), precio (requerido), duración en minutos (opcional), notas (opcional).
+- **Client picker** (ver más abajo) en lugar del `<Select>` anterior.
+- Price input: `type="text"` + `inputMode="numeric"`, helper `formatCOP(raw)`. Placeholder: `10.000`.
 - Al guardar: `parseInt(price.replace(/\./g, ''), 10)` para enviar entero a la DB.
-- On submit: inserts into `cuts` with `barber_id = user.id`.
-- On success: redirects to `/dashboard/cuts`.
+- Al enviar con éxito: redirige a `/dashboard/cuts`.
+
+### Leer `clientId` de la URL
+
+Al montar el componente, leer `searchParams.get('clientId')`. Si existe, buscarlo en la lista de clientes y pre-seleccionarlo en el combobox.
+
+```ts
+// En el useEffect que carga clientes:
+const preselect = searchParams.get('clientId')
+if (preselect) {
+  const found = data.find(c => c.id === preselect)
+  if (found) {
+    setSelectedClient(found)
+    setSearch(found.name)
+  }
+}
+```
+
+### Client picker (combobox)
+
+Estado local: `search` (texto del input), `selectedClient` (objeto `{ id, name } | null`), `open` (panel visible).
+
+```tsx
+<div className="relative">
+  <Input
+    placeholder="Buscar cliente..."
+    value={search}
+    onChange={(e) => { setSearch(e.target.value); setSelectedClient(null); setOpen(true) }}
+    onFocus={() => setOpen(true)}
+    autoComplete="off"
+  />
+
+  {open && (
+    <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover shadow-md">
+      {filtered.map(c => (
+        <button key={c.id} type="button"
+          className="flex w-full items-center px-3 py-2 text-sm hover:bg-accent"
+          onClick={() => { setSelectedClient(c); setSearch(c.name); setOpen(false) }}>
+          {c.name}
+        </button>
+      ))}
+      {filtered.length === 0 && (
+        <button type="button"
+          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-primary"
+          onClick={() => router.push(`/dashboard/clients/new?returnTo=/dashboard/cuts/new`)}>
+          <Plus className="h-4 w-4" />
+          Agregar "{search || 'cliente'}"
+        </button>
+      )}
+    </div>
+  )}
+</div>
+```
+
+`filtered` = `clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))`.
+
+Cerrar el panel al hacer clic fuera: `useEffect` con listener `mousedown` en `document` que llama `setOpen(false)` si el clic está fuera del contenedor ref.
+
+## 3b. Actualizar `/dashboard/clients/new`
+
+Leer el parámetro `returnTo` de la URL. Si existe, después del insert exitoso redirigir a `${returnTo}?clientId=${nuevoId}` en lugar de `/dashboard/clients`.
+
+```ts
+const returnTo = searchParams.get('returnTo')
+// ...tras insert exitoso:
+if (returnTo) {
+  router.push(`${returnTo}?clientId=${data[0].id}`)
+} else {
+  router.push('/dashboard/clients')
+}
+```
+
+El formulario debe hacer `select('id')` al insertar para obtener el ID del nuevo cliente:
+
+```ts
+const { data, error } = await supabase
+  .from('clients')
+  .insert({ ... })
+  .select('id')
+  .single()
+```
 
 ## 4. Build `/dashboard/cuts/[id]`
 

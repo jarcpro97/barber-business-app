@@ -1,6 +1,6 @@
 # Roadmap
 
-Phases are intentionally small and shippable. Each phase produces working, committed code.
+La aplicación está diseñada para usarse principalmente desde el celular — cada fase considera la experiencia táctil primero. Las fases son pequeñas y entregables. Cada fase produce código funcional y comprometido.
 
 ## Phase 1 — Project scaffold
 - Initialize Next.js (App Router) with TypeScript and Tailwind CSS.
@@ -38,18 +38,26 @@ Phases are intentionally small and shippable. Each phase produces working, commi
 - Home dashboard with key metrics: today's cuts, monthly revenue, top clients.
 - Chart component (daily revenue bar chart).
 
-## Phase 9 — Reports
+## Phase 9 — Mobile experience
+- Audit every page on a real mobile screen (375 px viewport): spacing, touch targets ≥ 44 px, legible font sizes.
+- Replace any hover-only interactions with tap-friendly alternatives.
+- Bottom navigation bar for the main sections (dashboard, clients, cuts, income).
+- Forms optimized for mobile keyboards: correct `inputMode` / `type` per field, no unnecessary zoom on focus.
+- Pull-to-refresh on list pages.
+- Smooth page transitions and loading skeletons to avoid layout shifts on slow connections.
+
+## Phase 10 — Reports
 - Printable / exportable monthly income report (CSV or PDF).
 
-## Phase 10 — Brand & social
+## Phase 11 — Brand & social
 - Shareable public barber profile page (read-only, no auth).
 - Social media links on the profile.
 - Basic growth tips section (static content to start).
 
-## Phase 11 — Marketing landing page
+## Phase 12 — Marketing landing page
 - Public home page (`/`) targeting new barbers.
 - Hero, features, and call-to-action to sign up.
 
-## Phase 12 — Production deploy
+## Phase 13 — Production deploy
 - Configure Vercel project with Supabase environment variables.
 - Smoke-test all flows in production.
