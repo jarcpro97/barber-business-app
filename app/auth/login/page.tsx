@@ -37,7 +37,7 @@ export default function LoginPage() {
       if (error) throw error
       router.push('/dashboard')
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      setError(error instanceof Error ? error.message : 'Ocurrio un error')
     } finally {
       setIsLoading(false)
     }
@@ -48,27 +48,27 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+            <CardTitle className="text-2xl font-bold">Bienvenido</CardTitle>
             <CardDescription>
-              Sign in to your CutMetrics account
+              Inicia sesion en tu cuenta de CutMetrics
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin}>
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="email">Email</FieldLabel>
+                  <FieldLabel htmlFor="email">Correo electronico</FieldLabel>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="tu@ejemplo.com"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <FieldLabel htmlFor="password">Contrasena</FieldLabel>
                   <Input
                     id="password"
                     type="password"
@@ -82,16 +82,16 @@ export default function LoginPage() {
                 )}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? <Spinner className="mr-2" /> : null}
-                  {isLoading ? 'Signing in...' : 'Sign in'}
+                  {isLoading ? 'Iniciando sesion...' : 'Iniciar sesion'}
                 </Button>
               </FieldGroup>
               <p className="mt-4 text-center text-sm text-muted-foreground">
-                Don&apos;t have an account?{' '}
+                No tienes una cuenta?{' '}
                 <Link
                   href="/auth/sign-up"
                   className="font-medium text-primary underline underline-offset-4 hover:text-primary/80"
                 >
-                  Sign up
+                  Registrate
                 </Link>
               </p>
             </form>

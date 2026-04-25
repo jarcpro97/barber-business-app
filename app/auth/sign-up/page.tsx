@@ -17,6 +17,8 @@ import { useState } from 'react'
 import { Spinner } from '@/components/ui/spinner'
 
 export default function SignUpPage() {
+  const [name, setName] = useState('')
+  const [shopName, setShopName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -31,13 +33,13 @@ export default function SignUpPage() {
     setError(null)
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      setError('Las contrasenas no coinciden')
       setIsLoading(false)
       return
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+      setError('La contrasena debe tener al menos 6 caracteres')
       setIsLoading(false)
       return
     }
@@ -50,12 +52,16 @@ export default function SignUpPage() {
           emailRedirectTo:
             process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
             `${window.location.origin}/auth/callback`,
+          data: {
+            name,
+            shop_name: shopName,
+          },
         },
       })
       if (error) throw error
       router.push('/auth/sign-up-success')
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      setError(error instanceof Error ? error.message : 'Ocurrio un error')
     } finally {
       setIsLoading(false)
     }
@@ -66,38 +72,59 @@ export default function SignUpPage() {
       <div className="w-full max-w-sm">
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">Create account</CardTitle>
+            <CardTitle className="text-2xl font-bold">Crear cuenta</CardTitle>
             <CardDescription>
-              Start tracking your barber business
+              Comienza a administrar tu negocio de barberia
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSignUp}>
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="email">Email</FieldLabel>
+                  <FieldLabel htmlFor="name">Tu nombre</FieldLabel>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Juan Perez"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="shop-name">Nombre de tu barberia</FieldLabel>
+                  <Input
+                    id="shop-name"
+                    type="text"
+                    placeholder="Barberia El Corte"
+                    value={shopName}
+                    onChange={(e) => setShopName(e.target.value)}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="email">Correo electronico</FieldLabel>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="tu@ejemplo.com"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <FieldLabel htmlFor="password">Contrasena</FieldLabel>
                   <Input
                     id="password"
                     type="password"
-                    placeholder="At least 6 characters"
+                    placeholder="Minimo 6 caracteres"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
+                  <FieldLabel htmlFor="confirm-password">Confirmar contrasena</FieldLabel>
                   <Input
                     id="confirm-password"
                     type="password"
@@ -111,16 +138,16 @@ export default function SignUpPage() {
                 )}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? <Spinner className="mr-2" /> : null}
-                  {isLoading ? 'Creating account...' : 'Sign up'}
+                  {isLoading ? 'Creando cuenta...' : 'Registrarse'}
                 </Button>
               </FieldGroup>
               <p className="mt-4 text-center text-sm text-muted-foreground">
-                Already have an account?{' '}
+                Ya tienes una cuenta?{' '}
                 <Link
                   href="/auth/login"
                   className="font-medium text-primary underline underline-offset-4 hover:text-primary/80"
                 >
-                  Sign in
+                  Iniciar sesion
                 </Link>
               </p>
             </form>

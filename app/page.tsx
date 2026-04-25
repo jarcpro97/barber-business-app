@@ -7,7 +7,6 @@ export default async function Home() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // If already logged in, redirect to dashboard
   if (user) {
     redirect('/dashboard')
   }
@@ -20,16 +19,16 @@ export default async function Home() {
             CutMetrics
           </h1>
           <p className="text-lg text-muted-foreground">
-            Track your cuts, grow your business.
+            Registra tus cortes, haz crecer tu negocio.
           </p>
         </div>
 
         <div className="flex flex-col gap-3 w-full max-w-xs">
           <Button asChild size="lg">
-            <Link href="/auth/login">Sign in</Link>
+            <Link href="/auth/login">Iniciar sesion</Link>
           </Button>
           <Button asChild variant="outline" size="lg">
-            <Link href="/auth/sign-up">Create account</Link>
+            <Link href="/auth/sign-up">Crear cuenta</Link>
           </Button>
         </div>
       </main>

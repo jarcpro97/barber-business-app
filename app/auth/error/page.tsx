@@ -4,17 +4,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 export default function AuthErrorPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex min-h-svh items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl text-destructive">Authentication Error</CardTitle>
+          <CardTitle className="text-2xl text-destructive">Error de autenticacion</CardTitle>
           <CardDescription>
-            Something went wrong during authentication. Please try again.
+            Algo salio mal durante la autenticacion. Por favor intenta de nuevo.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
           <Button asChild>
-            <Link href="/auth/login">Back to Login</Link>
+            <Link href="/auth/login">Volver al inicio de sesion</Link>
           </Button>
         </CardContent>
       </Card>
