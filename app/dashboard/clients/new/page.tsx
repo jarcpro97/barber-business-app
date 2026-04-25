@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,8 +11,9 @@ import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
-export default function NewClientPage() {
+function NewClientForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({
@@ -42,12 +43,16 @@ export default function NewClientPage() {
       return
     }
 
-    const { error: insertError } = await supabase.from("clients").insert({
-      barber_id: user.id,
-      name: form.name.trim(),
-      phone: form.phone.trim() || null,
-      notes: form.notes.trim() || null,
-    })
+    const { data: newClient, error: insertError } = await supabase
+      .from("clients")
+      .insert({
+        barber_id: user.id,
+        name: form.name.trim(),
+        phone: form.phone.trim() || null,
+        notes: form.notes.trim() || null,
+      })
+      .select("id")
+      .single()
 
     if (insertError) {
       setError("Error al crear el cliente: " + insertError.message)
@@ -55,7 +60,12 @@ export default function NewClientPage() {
       return
     }
 
-    router.push("/dashboard/clients")
+    const returnTo = searchParams.get("returnTo")
+    if (returnTo && newClient) {
+      router.push(`${returnTo}?clientId=${newClient.id}`)
+    } else {
+      router.push("/dashboard/clients")
+    }
   }
 
   return (
@@ -126,7 +136,7 @@ export default function NewClientPage() {
                   <Button type="submit" disabled={loading} className="flex-1">
                     {loading ? "Guardando..." : "Guardar Cliente"}
                   </Button>
-                  <Link href="/dashboard/clients">
+                  <Link href={searchParams.get("returnTo") ?? "/dashboard/clients"}>
                     <Button type="button" variant="outline">
                       Cancelar
                     </Button>
@@ -138,5 +148,13 @@ export default function NewClientPage() {
         </Card>
       </main>
     </div>
+  )
+}
+
+export default function NewClientPage() {
+  return (
+    <Suspense>
+      <NewClientForm />
+    </Suspense>
   )
 }
