@@ -18,6 +18,12 @@ type Client = {
   name: string
 }
 
+function formatCOP(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+  if (!digits) return ''
+  return parseInt(digits, 10).toLocaleString('es-CO')
+}
+
 export default function NewCutPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [clientId, setClientId] = useState<string>('')
@@ -75,7 +81,7 @@ export default function NewCutPage() {
         barber_id: user.id,
         client_id: clientId || null,
         date: dateTime.toISOString(),
-        price: parseFloat(price),
+        price: parseInt(price.replace(/\./g, ''), 10),
         duration: duration ? parseInt(duration) : null,
         notes: notes || null
       })
@@ -162,14 +168,13 @@ export default function NewCutPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <Field>
-                    <FieldLabel>Precio (MXN)</FieldLabel>
+                    <FieldLabel>Precio (COP)</FieldLabel>
                     <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="150.00"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="10.000"
                       value={price}
-                      onChange={(e) => setPrice(e.target.value)}
+                      onChange={(e) => setPrice(formatCOP(e.target.value))}
                       required
                     />
                   </Field>

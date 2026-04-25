@@ -28,6 +28,12 @@ type Cut = {
   client_id: string | null
 }
 
+function formatCOP(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+  if (!digits) return ''
+  return parseInt(digits, 10).toLocaleString('es-CO')
+}
+
 export default function CutDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [cut, setCut] = useState<Cut | null>(null)
@@ -59,7 +65,7 @@ export default function CutDetailPage({ params }: { params: Promise<{ id: string
         const cutDate = new Date(cutData.date)
         setDate(cutDate.toISOString().split('T')[0])
         setTime(cutDate.toTimeString().slice(0, 5))
-        setPrice(cutData.price.toString())
+        setPrice(formatCOP(String(Math.round(cutData.price))))
         setDuration(cutData.duration?.toString() || '')
         setNotes(cutData.notes || '')
       }
@@ -89,7 +95,7 @@ export default function CutDetailPage({ params }: { params: Promise<{ id: string
       .update({
         client_id: clientId || null,
         date: dateTime.toISOString(),
-        price: parseFloat(price),
+        price: parseInt(price.replace(/\./g, ''), 10),
         duration: duration ? parseInt(duration) : null,
         notes: notes || null,
         updated_at: new Date().toISOString()
@@ -235,14 +241,13 @@ export default function CutDetailPage({ params }: { params: Promise<{ id: string
 
                 <div className="grid grid-cols-2 gap-4">
                   <Field>
-                    <FieldLabel>Precio (MXN)</FieldLabel>
+                    <FieldLabel>Precio (COP)</FieldLabel>
                     <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="150.00"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="10.000"
                       value={price}
-                      onChange={(e) => setPrice(e.target.value)}
+                      onChange={(e) => setPrice(formatCOP(e.target.value))}
                       required
                     />
                   </Field>
