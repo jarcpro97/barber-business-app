@@ -26,6 +26,10 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
+  const { count: clientCount } = await supabase
+    .from('clients')
+    .select('*', { count: 'exact', head: true })
+
   return (
     <div className="min-h-svh bg-muted/30 p-6 md:p-10">
       <div className="mx-auto max-w-6xl">
@@ -84,7 +88,10 @@ export default async function DashboardPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">0</p>
+              <p className="text-3xl font-bold">{clientCount || 0}</p>
+              <Link href="/dashboard/clients" className="text-sm text-primary hover:underline">
+                Ver clientes
+              </Link>
             </CardContent>
           </Card>
         </div>
@@ -103,7 +110,11 @@ export default async function DashboardPage() {
                   Configura tu perfil de barbero
                 </Link>
               </li>
-              <li>Agrega y administra clientes</li>
+              <li>
+                <Link href="/dashboard/clients" className="text-primary underline underline-offset-4 hover:text-primary/80">
+                  Agrega y administra clientes
+                </Link>
+              </li>
               <li>Registra cortes y rastrea ingresos</li>
               <li>Consulta reportes y estadisticas</li>
             </ul>
