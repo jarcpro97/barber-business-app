@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
 import { ArrowLeft, TrendingUp, Calendar, DollarSign } from "lucide-react"
+import { toLocalDateStr, parseLocalDate } from "@/lib/dates"
 
 type IncomeSummary = {
   daily: { date: string; total: number }[]
@@ -44,7 +45,7 @@ export default function IncomePage() {
     const now = new Date()
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const startOfWeek = new Date(startOfToday)
-    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay())
+    startOfWeek.setDate(startOfWeek.getDate() - (startOfWeek.getDay() + 6) % 7)
     const startOfMonth = new Date(year, month, 1)
     const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59)
     const startOfYear = new Date(year, 0, 1)
@@ -82,7 +83,7 @@ export default function IncomePage() {
       // Agrupar por dia
       const dailyMap = new Map<string, number>()
       cuts.forEach(cut => {
-        const date = new Date(cut.date).toISOString().split("T")[0]
+        const date = toLocalDateStr(new Date(cut.date))
         dailyMap.set(date, (dailyMap.get(date) || 0) + Number(cut.price))
       })
       const daily = Array.from(dailyMap.entries()).map(([date, total]) => ({ date, total }))
@@ -92,8 +93,8 @@ export default function IncomePage() {
       cuts.forEach(cut => {
         const d = new Date(cut.date)
         const weekStart = new Date(d)
-        weekStart.setDate(d.getDate() - d.getDay())
-        const week = weekStart.toISOString().split("T")[0]
+        weekStart.setDate(d.getDate() - (d.getDay() + 6) % 7)
+        const week = toLocalDateStr(weekStart)
         weeklyMap.set(week, (weeklyMap.get(week) || 0) + Number(cut.price))
       })
       const weekly = Array.from(weeklyMap.entries()).map(([week, total]) => ({ week, total }))
@@ -262,13 +263,13 @@ export default function IncomePage() {
                   <tbody>
                     {period === "daily" && summary.daily
                       .filter(d => {
-                        const date = new Date(d.date)
-                        return date.getMonth() === month && date.getFullYear() === year
+                        const [y, m] = d.date.split('-').map(Number)
+                        return (m - 1) === month && y === year
                       })
                       .map((item, i) => (
                         <tr key={i} className="border-b last:border-0">
                           <td className="py-3">
-                            {new Date(item.date).toLocaleDateString("es-CO", {
+                            {parseLocalDate(item.date).toLocaleDateString("es-CO", {
                               weekday: "long",
                               day: "numeric",
                               month: "long"
@@ -279,11 +280,11 @@ export default function IncomePage() {
                       ))}
 
                     {period === "weekly" && summary.weekly
-                      .filter(w => new Date(w.week).getFullYear() === year)
+                      .filter(w => parseInt(w.week.split('-')[0]) === year)
                       .map((item, i) => (
                         <tr key={i} className="border-b last:border-0">
                           <td className="py-3">
-                            Semana del {new Date(item.week).toLocaleDateString("es-CO", {
+                            Semana del {parseLocalDate(item.week).toLocaleDateString("es-CO", {
                               day: "numeric",
                               month: "long"
                             })}
@@ -311,10 +312,10 @@ export default function IncomePage() {
                     ))}
 
                     {((period === "daily" && summary.daily.filter(d => {
-                      const date = new Date(d.date)
-                      return date.getMonth() === month && date.getFullYear() === year
+                      const [y, m] = d.date.split('-').map(Number)
+                      return (m - 1) === month && y === year
                     }).length === 0) ||
-                      (period === "weekly" && summary.weekly.filter(w => new Date(w.week).getFullYear() === year).length === 0) ||
+                      (period === "weekly" && summary.weekly.filter(w => parseInt(w.week.split('-')[0]) === year).length === 0) ||
                       (period === "monthly" && summary.monthly.filter(m => m.month.startsWith(year.toString())).length === 0) ||
                       (period === "yearly" && summary.yearly.length === 0)) && (
                       <tr>

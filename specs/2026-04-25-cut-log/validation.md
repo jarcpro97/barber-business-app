@@ -64,3 +64,11 @@ All checks must pass before this branch can be merged.
 ### 11. Build passes
 
 - `npm run build` exits with code 0 and no TypeScript errors.
+
+### 12. Fecha y hora en hora local (no UTC)
+
+- Abrir `/dashboard/cuts/new` a las **8:00 pm** hora Colombia.
+- El campo "Fecha" muestra la fecha local correcta (no el día siguiente).
+- El campo "Hora" muestra `20:00`.
+- Guardar el corte; abrir `/dashboard/cuts/[id]` para ese corte.
+- Los campos "Fecha" y "Hora" muestran exactamente los mismos valores que se ingresaron.

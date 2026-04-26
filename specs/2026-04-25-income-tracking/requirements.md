@@ -10,6 +10,7 @@ Give barbers a clear view of their earnings aggregated by day, week, month, and 
 |---|---|---|
 | Data source | `cuts` table (date + price columns) | No separate income table needed; cuts are the source of truth |
 | Aggregation | Client-side (JavaScript grouping) | Avoids Supabase RPC/functions; dataset per barber is small |
+| Timezone | Agrupación por día/semana usa `getFullYear/Month/Date` (hora local del browser) vía `lib/dates.ts#toLocalDateStr` | `toISOString()` devuelve fecha UTC; cortes registrados después de las 7 pm en Colombia aparecerían bajo el día siguiente |
 | Periods | Daily, weekly, monthly, yearly | Covers all common reporting needs |
 | Filters | Year picker always visible; month picker shown for daily view | Narrows the dataset to a manageable range |
 | Currency | Formateador manual COP: `'$ ' + Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')` | `Intl.NumberFormat` es inconsistente entre SSR (Node.js ICU parcial) y el browser; el formateador manual siempre produce `$ 15.000` |
@@ -21,7 +22,7 @@ Four summary cards always visible:
 | Card | Calculation |
 |---|---|
 | Hoy | Sum of cuts with `date >= start of today` |
-| Esta semana | Sum of cuts with `date >= start of current week (Sunday)` |
+| Esta semana | Sum of cuts with `date >= start of current week (Monday)` |
 | Este mes | Sum of cuts in the selected year/month |
 | Este año | Sum of all cuts in the selected year |
 
