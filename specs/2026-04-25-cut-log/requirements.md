@@ -12,6 +12,7 @@ Allow barbers to log each haircut — date, price, duration, optional notes — 
 | Client link | Foreign key `client_id → clients.id` | Optional — a cut can be logged without a client |
 | RLS | Cuts filtered by `barber_id = auth.uid()` | Same multi-tenant pattern as clients |
 | Currency format | Formateador manual COP: `'$ ' + Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')` | `Intl.NumberFormat` con COP/es-CO es inconsistente entre SSR y browser; el manual siempre produce `$ 15.000` |
+| Timezone | Fechas guardadas en Supabase como UTC ISO string; toda lectura/escritura de partes de fecha usa métodos locales (`getFullYear`, `getMonth`, `getDate`, `getHours`, `getMinutes`) vía helpers en `lib/dates.ts` | `toISOString()` devuelve UTC, lo que produce desfase de un día para cortes registrados después de las 7 pm en Colombia (UTC-5) |
 | Price input | `type="text"` + `inputMode="numeric"` con `formatCOP()` | Auto-inserta `.` como separador de miles al escribir; guarda entero en DB |
 | List order | Descending by `date` | Most recent cuts first |
 | Client selector | Combobox de búsqueda en lugar de `<Select>` | En móvil, un dropdown largo de clientes es difícil de usar; el buscador filtra por nombre al escribir |

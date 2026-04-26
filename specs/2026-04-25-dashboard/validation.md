@@ -12,6 +12,13 @@ All checks must pass before this branch can be merged.
 - "Ingresos del mes" shows $200.00.
 - "Total de clientes" reflects the actual client count.
 
+### 1b. Metrics use Colombia time, not UTC
+
+- Log a cut at **8:00 pm** hora Colombia (20:00 COT = 01:00 UTC next day).
+- Load `/dashboard` the same Colombia calendar day.
+- "Cortes de hoy" shows the cut (not 0).
+- The bar chart shows the amount under today's Colombia date, not tomorrow's.
+
 ### 2. Revenue bar chart renders
 
 - The chart appears on the dashboard showing the last 30 days.

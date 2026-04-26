@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { RevenueChart } from '@/components/dashboard/revenue-chart'
 import Link from 'next/link'
 import { User, Scissors, DollarSign, Users, Plus, TrendingUp, Trophy } from 'lucide-react'
+import { toColombiaDateStr, colombiaMidnight } from '@/lib/dates'
 
 async function signOut() {
   'use server'
@@ -21,19 +22,17 @@ export default async function DashboardPage() {
     redirect('/auth/login')
   }
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
+  const todayStr = toColombiaDateStr(new Date())
+  const today = colombiaMidnight(todayStr)
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
 
-  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-  const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59)
+  const [todayYear, todayMonth] = todayStr.split('-').map(Number)
+  const firstDayOfMonth = colombiaMidnight(`${todayYear}-${String(todayMonth).padStart(2, '0')}-01`)
+  const daysInMonth = new Date(todayYear, todayMonth, 0).getDate()
+  const lastDayOfMonth = new Date(`${todayYear}-${String(todayMonth).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}T23:59:59-05:00`)
 
-  const thirtyDaysAgo = new Date(today)
-  thirtyDaysAgo.setDate(today.getDate() - 29)
-
-  const ninetyDaysAgo = new Date(today)
-  ninetyDaysAgo.setDate(today.getDate() - 89)
+  const thirtyDaysAgo = colombiaMidnight(toColombiaDateStr(new Date(today.getTime() - 29 * 24 * 60 * 60 * 1000)))
+  const ninetyDaysAgo = colombiaMidnight(toColombiaDateStr(new Date(today.getTime() - 89 * 24 * 60 * 60 * 1000)))
 
   const [
     { data: profile },
@@ -69,18 +68,21 @@ export default async function DashboardPage() {
   const monthIncome = monthCuts?.reduce((sum, c) => sum + Number(c.price), 0) ?? 0
   const todayIncome =
     recentCuts
-      ?.filter(c => c.date >= today.toISOString() && c.date < tomorrow.toISOString())
+      ?.filter(c => toColombiaDateStr(new Date(c.date)) === todayStr)
       .reduce((sum, c) => sum + Number(c.price), 0) ?? 0
 
   // Build 30-day chart data with zero-fill
   const chartData = Array.from({ length: 30 }, (_, i) => {
-    const d = new Date(thirtyDaysAgo)
-    d.setDate(d.getDate() + i)
-    const key = d.toISOString().split('T')[0]
-    const label = d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })
+    const d = new Date(thirtyDaysAgo.getTime() + i * 24 * 60 * 60 * 1000)
+    const key = toColombiaDateStr(d)
+    const label = new Intl.DateTimeFormat('es-CO', {
+      timeZone: 'America/Bogota',
+      day: '2-digit',
+      month: '2-digit',
+    }).format(d)
     const total =
       recentCuts
-        ?.filter((c) => c.date.startsWith(key))
+        ?.filter((c) => toColombiaDateStr(new Date(c.date)) === key)
         .reduce((sum, c) => sum + Number(c.price), 0) ?? 0
     return { day: label, total }
   })

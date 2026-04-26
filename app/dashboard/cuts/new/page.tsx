@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
 import { ArrowLeft, Scissors, Plus } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
+import { toLocalDateStr, toLocalTimeStr } from '@/lib/dates'
 
 type Client = {
   id: string
@@ -42,8 +43,8 @@ function NewCutForm() {
 
   useEffect(() => {
     const now = new Date()
-    setDate(now.toISOString().split('T')[0])
-    setTime(now.toTimeString().slice(0, 5))
+    setDate(toLocalDateStr(now))
+    setTime(toLocalTimeStr(now))
 
     async function fetchClients() {
       const { data } = await supabase

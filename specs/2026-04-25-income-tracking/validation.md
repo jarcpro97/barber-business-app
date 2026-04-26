@@ -39,3 +39,10 @@ All checks must pass before this branch can be merged.
 ### 7. Build passes
 
 - `npm run build` exits with code 0 and no TypeScript errors.
+
+### 8. Agrupación en hora local (no UTC)
+
+- Registrar un corte a las **8:00 pm** hora Colombia (20:00 COT).
+- Navegar a `/dashboard/income` → vista Diaria del mismo mes.
+- El corte aparece bajo la fecha Colombia correcta (no bajo el día siguiente).
+- La vista Semanal agrupa el corte en la semana correcta de la hora local.

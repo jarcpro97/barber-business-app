@@ -20,7 +20,7 @@ Build the main dashboard page (`/dashboard`) that gives the barber an at-a-glanc
 
 | Metric | Source |
 |---|---|
-| Cortes de hoy | Count of `cuts` where `date` is within today's UTC range |
+| Cortes de hoy | Count of `cuts` where `date` is within today's range in Colombia time (America/Bogota, UTC-5) |
 | Ingresos del mes | Sum of `cuts.price` for the current calendar month |
 | Total de clientes | Count of all `clients` rows |
 | Reportes (link) | Static card linking to `/dashboard/income` |

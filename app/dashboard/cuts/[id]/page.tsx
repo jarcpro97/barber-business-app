@@ -13,6 +13,7 @@ import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { ArrowLeft, Scissors, Trash2 } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
+import { toLocalDateStr, toLocalTimeStr } from '@/lib/dates'
 
 type Client = {
   id: string
@@ -63,8 +64,8 @@ export default function CutDetailPage({ params }: { params: Promise<{ id: string
         setCut(cutData)
         setClientId(cutData.client_id || '')
         const cutDate = new Date(cutData.date)
-        setDate(cutDate.toISOString().split('T')[0])
-        setTime(cutDate.toTimeString().slice(0, 5))
+        setDate(toLocalDateStr(cutDate))
+        setTime(toLocalTimeStr(cutDate))
         setPrice(formatCOP(String(Math.round(cutData.price))))
         setDuration(cutData.duration?.toString() || '')
         setNotes(cutData.notes || '')

@@ -34,11 +34,34 @@ create policy "Barbers manage own cuts"
 
 ### Campos
 
-- Fecha / hora (defaults a ahora), precio (requerido), duración en minutos (opcional), notas (opcional).
+- Fecha / hora (defaults a ahora en hora local), precio (requerido), duración en minutos (opcional), notas (opcional).
 - **Client picker** (ver más abajo) en lugar del `<Select>` anterior.
 - Price input: `type="text"` + `inputMode="numeric"`, helper `formatCOP(raw)`. Placeholder: `10.000`.
 - Al guardar: `parseInt(price.replace(/\./g, ''), 10)` para enviar entero a la DB.
 - Al enviar con éxito: redirige a `/dashboard/cuts`.
+
+### Inicialización de fecha y hora
+
+Usar helpers de `lib/dates.ts` para que el default refleje la hora local del browser, no UTC:
+
+```ts
+import { toLocalDateStr, toLocalTimeStr } from '@/lib/dates'
+
+const now = new Date()
+setDate(toLocalDateStr(now))   // YYYY-MM-DD en hora local
+setTime(toLocalTimeStr(now))   // HH:MM en hora local
+```
+
+> **No usar** `now.toISOString().split('T')[0]` — devuelve la fecha en UTC, que puede ser un día distinto al local.
+
+### Guardar la fecha
+
+Construir el datetime combinando los campos del form (hora local) y convertir a UTC ISO para Supabase:
+
+```ts
+const dateTime = new Date(`${date}T${time}`)  // interpretado como hora local
+date: dateTime.toISOString()                   // guardado como UTC en Supabase
+```
 
 ### Leer `clientId` de la URL
 
@@ -126,6 +149,20 @@ const { data, error } = await supabase
 - Displays all fields.
 - Edit mode for all fields; price cargado desde DB con `formatCOP(String(Math.round(price)))` para mostrarlo formateado (ej. `15.000`).
 - Delete button with confirmation; redirects to the list on confirm.
+
+### Cargar fecha y hora del corte existente
+
+Usar helpers de `lib/dates.ts` para extraer partes locales del timestamp UTC que devuelve Supabase:
+
+```ts
+import { toLocalDateStr, toLocalTimeStr } from '@/lib/dates'
+
+const cutDate = new Date(cutData.date)
+setDate(toLocalDateStr(cutDate))   // fecha en hora local
+setTime(toLocalTimeStr(cutDate))   // hora en hora local
+```
+
+> **No usar** `cutDate.toISOString().split('T')[0]` — da la fecha en UTC, que puede diferir de la local para cortes registrados en la tarde/noche.
 
 ## 5. Link from dashboard
 

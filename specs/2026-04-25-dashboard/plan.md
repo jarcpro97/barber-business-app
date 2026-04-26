@@ -12,42 +12,48 @@ if (!user) redirect('/auth/login')
 
 ### Parallel data fetching
 
+El servidor corre en UTC. Todos los límites de fecha se calculan en hora Colombia (America/Bogota, UTC-5) usando helpers de `lib/dates.ts`:
+
 ```ts
-const thirtyDaysAgo = new Date(today); thirtyDaysAgo.setDate(today.getDate() - 29)
-const ninetyDaysAgo = new Date(today); ninetyDaysAgo.setDate(today.getDate() - 89)
+import { toColombiaDateStr, colombiaMidnight } from '@/lib/dates'
 
-const [{ data: profile }, { count: clientCount }, { count: todayCutsCount }, { data: monthCuts }, { data: recentCuts }] =
-  await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user.id).single(),
-    supabase.from('clients').select('*', { count: 'exact', head: true }),
-    supabase.from('cuts').select('*', { count: 'exact', head: true })
-      .gte('date', today).lt('date', tomorrow),
-    supabase.from('cuts').select('price')
-      .gte('date', firstDayOfMonth).lte('date', lastDayOfMonth),
-    supabase.from('cuts').select('date, price, client:clients(id, name)')
-      .gte('date', thirtyDaysAgo.toISOString())
-      .order('date', { ascending: true }),
-  ])
+const todayStr = toColombiaDateStr(new Date())           // "YYYY-MM-DD" en Colombia
+const today = colombiaMidnight(todayStr)                 // medianoche Colombia como UTC Date
+const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
 
-const monthIncome = monthCuts?.reduce((sum, c) => sum + Number(c.price), 0) || 0
+const [todayYear, todayMonth] = todayStr.split('-').map(Number)
+const firstDayOfMonth = colombiaMidnight(`${todayYear}-${String(todayMonth).padStart(2,'0')}-01`)
+const daysInMonth = new Date(todayYear, todayMonth, 0).getDate()
+const lastDayOfMonth = new Date(`${todayYear}-${String(todayMonth).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}T23:59:59-05:00`)
+
+const thirtyDaysAgo = colombiaMidnight(toColombiaDateStr(new Date(today.getTime() - 29 * 24 * 60 * 60 * 1000)))
+const ninetyDaysAgo = colombiaMidnight(toColombiaDateStr(new Date(today.getTime() - 89 * 24 * 60 * 60 * 1000)))
 ```
+
+Las queries a Supabase usan `.toISOString()` sobre estos `Date` (ya correctamente anclados a medianoche Colombia en UTC).
 
 ### Compute chart data (server-side)
 
-Build an array of 30 entries — one per day — with explicit zero-fill for days with no cuts:
+Build an array of 30 entries — one per day — with explicit zero-fill for days with no cuts. Agrupar por día Colombia, no por día UTC:
 
 ```ts
+import { toColombiaDateStr } from '@/lib/dates'
+
 const chartData = Array.from({ length: 30 }, (_, i) => {
-  const d = new Date(thirtyDaysAgo)
-  d.setDate(d.getDate() + i)
-  const key = d.toISOString().split('T')[0]
-  const label = d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' })
+  const d = new Date(thirtyDaysAgo.getTime() + i * 24 * 60 * 60 * 1000)
+  const key = toColombiaDateStr(d)
+  const label = new Intl.DateTimeFormat('es-CO', {
+    timeZone: 'America/Bogota',
+    day: '2-digit', month: '2-digit',
+  }).format(d)
   const total = recentCuts
-    ?.filter(c => c.date.startsWith(key))
+    ?.filter(c => toColombiaDateStr(new Date(c.date)) === key)
     .reduce((sum, c) => sum + Number(c.price), 0) || 0
   return { day: label, total }
 })
 ```
+
+> **No usar** `d.toISOString().split('T')[0]` ni `c.date.startsWith(key)` — comparan en UTC y agrupan cortes de tarde/noche bajo el día siguiente.
 
 ### Compute top clients (server-side)
 

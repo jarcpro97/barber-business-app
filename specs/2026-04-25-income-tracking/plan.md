@@ -25,7 +25,7 @@ totals: { today, week, month, year }
      .lte('date', endOfYear)
    ```
 2. Compute quick totals by filtering the returned array against `startOfToday`, `startOfWeek`, `startOfMonth`, and `endOfMonth`.
-3. Group into four Maps (by day `YYYY-MM-DD`, week-start `YYYY-MM-DD`, month `YYYY-MM`, year `YYYY`) and convert to sorted arrays.
+3. Group into four Maps (by day `YYYY-MM-DD`, week-start `YYYY-MM-DD`, month `YYYY-MM`, year `YYYY`) and convert to sorted arrays. Usar `lib/dates.ts#toLocalDateStr` para la clave diaria y semanal (extrae partes locales del browser, no UTC).
 
 ### UI structure
 
@@ -33,6 +33,42 @@ totals: { today, week, month, year }
 - **Quick-total cards row** (4 cards): Hoy, Esta semana, Este mes, Este año.
 - **Filter row**: period `<Select>`, year `<Select>`, month `<Select>` (only when period is `daily`).
 - **Breakdown table**: two columns — period label and total. Empty state if no data.
+
+### Date grouping
+
+```ts
+import { toLocalDateStr, parseLocalDate } from '@/lib/dates'
+
+// Diario — clave en hora local del browser
+const date = toLocalDateStr(new Date(cut.date))
+
+// Semanal — inicio de semana el lunes (lunes a domingo)
+const d = new Date(cut.date)
+const weekStart = new Date(d)
+weekStart.setDate(d.getDate() - (d.getDay() + 6) % 7)
+const week = toLocalDateStr(weekStart)
+
+// Mensual y anual — getFullYear/getMonth ya son locales, no necesitan helper
+```
+
+Filtrar la tabla diaria y semanal con las claves string directamente (no con `new Date(str)`, que parsea `YYYY-MM-DD` como UTC midnight):
+
+```ts
+// Diario
+.filter(d => {
+  const [y, m] = d.date.split('-').map(Number)
+  return (m - 1) === month && y === year
+})
+
+// Semanal
+.filter(w => parseInt(w.week.split('-')[0]) === year)
+```
+
+Para mostrar fechas en la tabla, usar `parseLocalDate` para evitar el parse como UTC midnight:
+
+```ts
+parseLocalDate(item.date).toLocaleDateString('es-CO', { ... })
+```
 
 ### Formatting helpers
 
